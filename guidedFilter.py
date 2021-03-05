@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 ##输入：引导图像和窗口的半径
 def boxFilter(imgSrc, r):
     img_h, img_w = imgSrc.shape
-    imgDst = np.zeros([img_h, img_w])
+    imgDst = np.zeros([img_h, img_w], np.float32)
 
     ##首先累加y方向(↓)
     imgCum = np.cumsum(imgSrc, 0)
@@ -37,14 +37,17 @@ def guidedFilter(I, p, r, eps):
     N = boxFilter(np.ones_like(I), r)
 
     mean_I = boxFilter(I, r) / N
-    mean_II = boxFilter(I ** 2, r) / N
+    float_I = np.float32(I)
+    mean_II = boxFilter(float_I**2, r) / N
+    ##mean_II = boxFilter(I*I, r) / N   ##这里I如果是uint8的,I*I的结果会溢出255,所以转为float32处理
     var_I = mean_II - mean_I**2
     
     mean_p = boxFilter(p, r) / N
-    mean_Ip = boxFilter(I * p, r) / N
+    float_Ip = float_I * np.float32(p)
+    mean_Ip = boxFilter(float_Ip, r) / N
     cov_Ip = mean_Ip - mean_I * mean_p
     ##这里del是尽快释放一些空间，图像不大的话可以不用
-    del mean_Ip
+    del mean_Ip, mean_II
 
     a = cov_Ip / (var_I + eps)
     del cov_Ip, var_I
@@ -57,27 +60,4 @@ def guidedFilter(I, p, r, eps):
     outputImg = mean_a * I + mean_b
     return outputImg
 
-
-####cones image
-##leftImgPath = r'D:\work_space\Codes\SGM\cones\left.png'
-##rightImgPath = r'D:\work_space\Codes\SGM\cones\right.png'
-##
-##leftImg = cv2.imread(leftImgPath, cv2.IMREAD_GRAYSCALE)
-##rightImg = cv2.imread(rightImgPath, cv2.IMREAD_GRAYSCALE)
-##
-####r = 2
-####eps = 0.1**2
-##
-##res = []
-##rs = [2, 4, 8]
-##epss = [0.1**2, 0.2**2, 0.4**2]
-##for r in rs:
-##    for eps in epss:
-##        filtered = guidedFilter(leftImg, leftImg, r, eps)
-##        res.append(filtered)
-##
-##plt.subplot(331), plt.imshow(res[0], 'gray'), plt.subplot(332), plt.imshow(res[1], 'gray'), plt.subplot(333), plt.imshow(res[2], 'gray')
-##plt.subplot(334), plt.imshow(res[3], 'gray'), plt.subplot(335), plt.imshow(res[4], 'gray'), plt.subplot(336), plt.imshow(res[5], 'gray')
-##plt.subplot(337), plt.imshow(res[6], 'gray'), plt.subplot(338), plt.imshow(res[7], 'gray'), plt.subplot(339), plt.imshow(res[8], 'gray')
-##plt.show()
-  
+ 
